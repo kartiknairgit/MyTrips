@@ -42,10 +42,11 @@ export async function recordFlightFootprint(
     throw new Error("Video recording is not supported in this browser.");
   }
   const stream = canvas.captureStream(30); // 30fps
-  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
-  const recorder = new MediaRecorder(stream, { mimeType });
+  const mimeType = ["video/webm;codecs=vp9", "video/webm"]
+    .find((candidate) => MediaRecorder.isTypeSupported(candidate));
+  const recorder = mimeType
+    ? new MediaRecorder(stream, { mimeType })
+    : new MediaRecorder(stream);
   const chunks: Blob[] = [];
 
   recorder.ondataavailable = (e) => {
@@ -68,8 +69,16 @@ export async function recordFlightFootprint(
   }
 
   recorder.stop();
-  return new Promise((resolve) => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+  return new Promise((resolve, reject) => {
+    recorder.onerror = () => reject(new Error("The browser stopped the footprint recording."));
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      if (chunks.length === 0) {
+        reject(new Error("The browser produced an empty footprint recording."));
+        return;
+      }
+      resolve(new Blob(chunks, { type: recorder.mimeType || "video/webm" }));
+    };
   });
 }
 
@@ -100,11 +109,21 @@ export function renderPoster(
 }
 
 /** Share via native share sheet where available, else fall back to download. */
-export async function shareOrDownload(blob: Blob, filename: string) {
+export async function shareOrDownload(
+  blob: Blob,
+  filename: string,
+  preferShare = true,
+): Promise<"shared" | "downloaded"> {
   const file = new File([blob], filename, { type: blob.type });
-  if (navigator.share && navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: "My FlightPath" });
-    return;
+  if (preferShare && navigator.share && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: "My FlightPath" });
+      return "shared";
+    } catch (reason) {
+      if (reason instanceof DOMException && reason.name === "AbortError") throw reason;
+      // Sharing can fail after a positive capability check. Downloading is
+      // the deterministic fallback and keeps the generated file accessible.
+    }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -112,6 +131,7 @@ export async function shareOrDownload(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return "downloaded";
 }
 
 function sleep(ms: number) {

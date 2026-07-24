@@ -49,9 +49,9 @@ export function progressFraction(flight: FlightRow): number {
 export function paintForStatus(status: FlightStatus, color: string) {
   switch (status) {
     case "completed":
-      return { "line-color": color, "line-width": 2.5, "line-dasharray": [1, 0] };
+      return { "line-color": color, "line-width": 2.5, "line-opacity": 1, "line-dasharray": [1, 0] };
     case "in_transit":
-      return { "line-color": color, "line-width": 2.5, "line-dasharray": [2, 2] };
+      return { "line-color": color, "line-width": 2.5, "line-opacity": 1, "line-dasharray": [2, 2] };
     case "scheduled":
       return { "line-color": color, "line-width": 1, "line-opacity": 0.35, "line-dasharray": [1, 3] };
     case "cancelled":

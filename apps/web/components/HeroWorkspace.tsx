@@ -20,13 +20,35 @@ interface Capabilities {
 export default function HeroWorkspace() {
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [flights, setFlights] = useState<FlightForAnimation[]>([]);
+  const [mapState, setMapState] = useState<"loading" | "empty" | "ready" | "error">("loading");
+  const [mapMessage, setMapMessage] = useState<string | undefined>();
   const handleReady = useCallback((nextMap: maplibregl.Map | null) => setMap(nextMap), []);
   const handleFlights = useCallback((nextFlights: FlightForAnimation[]) => setFlights(nextFlights), []);
+  const handleMapState = useCallback((
+    state: "loading" | "empty" | "ready" | "error",
+    message?: string,
+  ) => {
+    setMapState(state);
+    setMapMessage(message);
+  }, []);
 
   return (
     <>
       <div className="hero">
-        <div className="panel map-panel"><MapView onReady={handleReady} onFlightsChange={handleFlights} /></div>
+        <div className="panel map-panel">
+          <MapView onReady={handleReady} onFlightsChange={handleFlights} onStateChange={handleMapState} />
+          {mapState !== "ready" && (
+            <div className={`map-state map-state-${mapState}`} role={mapState === "error" ? "alert" : "status"}>
+              <strong>
+                {mapState === "loading" && "Loading your route map…"}
+                {mapState === "empty" && "Your map is ready for its first flight"}
+                {mapState === "error" && "Route map unavailable"}
+              </strong>
+              {mapState === "empty" && <span>Add a flight to draw your first great-circle route.</span>}
+              {mapState === "error" && <span>{mapMessage}</span>}
+            </div>
+          )}
+        </div>
         <FlightEntryForm />
       </div>
       <FootprintExport map={map} flights={flights} />
@@ -48,15 +70,15 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
     });
   }, []);
 
-  async function makeVideo() {
+  async function makeVideo(preferShare: boolean) {
     if (!map || flights.length === 0 || !capabilities.recording) return;
     setBusy("video");
     setError(null);
     setSuccess(null);
     try {
       const blob = await recordFlightFootprint(map, flights);
-      await shareOrDownload(blob, "my-flightpath.webm");
-      setSuccess(capabilities.sharing ? "Your footprint video is ready to share." : "Your footprint video was downloaded.");
+      const outcome = await shareOrDownload(blob, "my-flightpath.webm", preferShare);
+      setSuccess(outcome === "shared" ? "Your footprint video was shared." : "Your footprint video was downloaded.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not record your footprint.");
     } finally {
@@ -64,7 +86,7 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
     }
   }
 
-  async function makePoster() {
+  async function makePoster(preferShare: boolean) {
     if (!map || flights.length === 0) return;
     setBusy("poster");
     setError(null);
@@ -73,8 +95,8 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
       const stats: OverviewStats = await getOverviewStats();
       const blob = await renderPoster(map, stats);
       if (!blob) throw new Error("This browser could not render the poster.");
-      await shareOrDownload(blob, "my-flightpath.png");
-      setSuccess(capabilities.sharing ? "Your poster is ready to share." : "Your poster was downloaded.");
+      const outcome = await shareOrDownload(blob, "my-flightpath.png", preferShare);
+      setSuccess(outcome === "shared" ? "Your poster was shared." : "Your poster was downloaded.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not create your poster.");
     } finally {
@@ -83,7 +105,7 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
   }
 
   return (
-    <section className="panel export-panel" aria-labelledby="footprint-title">
+    <section className="panel export-panel" id="footprint" aria-labelledby="footprint-title">
       <div>
         <div className="eyebrow">Made on your device</div>
         <h2 className="section-title" id="footprint-title">Record your footprint</h2>
@@ -97,14 +119,26 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
         <>
           <div className="button-row">
             {capabilities.recording ? (
-              <button className="button primary" disabled={busy !== null} onClick={() => void makeVideo()}>
-                {busy === "video" ? "Recording…" : capabilities.sharing ? "Record & share video" : "Record & download video"}
-              </button>
+              <>
+                {capabilities.sharing && (
+                  <button className="button primary" disabled={busy !== null} onClick={() => void makeVideo(true)}>
+                    {busy === "video" ? "Recording…" : "Record & share video"}
+                  </button>
+                )}
+                <button className={capabilities.sharing ? "button" : "button primary"} disabled={busy !== null} onClick={() => void makeVideo(false)}>
+                  {busy === "video" ? "Recording…" : "Record & download video"}
+                </button>
+              </>
             ) : (
               <span className="notice info">Video recording isn’t available in this browser. Poster download is still supported.</span>
             )}
-            <button className="button" disabled={busy !== null} onClick={() => void makePoster()}>
-              {busy === "poster" ? "Rendering…" : capabilities.sharing ? "Share poster" : "Download poster"}
+            {capabilities.sharing && (
+              <button className="button" disabled={busy !== null} onClick={() => void makePoster(true)}>
+                {busy === "poster" ? "Rendering…" : "Share poster"}
+              </button>
+            )}
+            <button className="button" disabled={busy !== null} onClick={() => void makePoster(false)}>
+              {busy === "poster" ? "Rendering…" : "Download poster"}
             </button>
           </div>
           {success && <div className="notice success" role="status">{success}</div>}
