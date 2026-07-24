@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/supabase_service.dart';
 import 'providers/auth_provider.dart';
+import 'providers/flights_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/map/map_screen.dart';
 
 // Same status → styling rules as apps/web/lib/flightPath.ts:
 //   scheduled  -> faint dotted arc
@@ -32,6 +34,7 @@ class FlightPathApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => FlightsProvider()),
       ],
       child: MaterialApp(
         title: 'FlightPath',
@@ -70,39 +73,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (authProvider.isAuthenticated) {
-          // TODO: Replace with actual home screen once implemented
-          return Scaffold(
-            backgroundColor: const Color(0xFF0a0a0a),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Welcome to FlightPath!',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Signed in as: ${authProvider.currentUser?.email}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () => authProvider.signOut(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF10F0),
-                      foregroundColor: Colors.black,
-                    ),
-                    child: const Text('Sign Out'),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return const MapScreen();
         }
 
         return const LoginScreen();

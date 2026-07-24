@@ -1,6 +1,3 @@
-import 'airport.dart';
-import 'airline.dart';
-
 /// Flight status enum mirroring the database enum.
 enum FlightStatus {
   scheduled,
