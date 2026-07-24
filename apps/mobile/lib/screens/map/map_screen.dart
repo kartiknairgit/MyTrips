@@ -5,6 +5,7 @@ import '../../providers/flights_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/flight_path_service.dart';
 import '../../models/flight.dart';
+import '../flights/add_flight_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -139,11 +140,9 @@ class _MapScreenState extends State<MapScreen> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            // TODO: Navigate to add flight screen
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Flight entry coming soon!'),
-                                backgroundColor: Color(0xFFFF10F0),
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const AddFlightScreen(),
                               ),
                             );
                           },
@@ -170,11 +169,9 @@ class _MapScreenState extends State<MapScreen> {
 
           return FloatingActionButton(
             onPressed: () {
-              // TODO: Navigate to add flight screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Flight entry coming soon!'),
-                  backgroundColor: Color(0xFFFF10F0),
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AddFlightScreen(),
                 ),
               );
             },
