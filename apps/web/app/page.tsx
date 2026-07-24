@@ -3,6 +3,7 @@ import FlightEntryForm from "@/components/FlightEntryForm";
 import OverviewStats from "@/components/OverviewStats";
 import FlightCalendar from "@/components/FlightCalendar";
 import GeoStats from "@/components/GeoStats";
+import AirlineStats from "@/components/AirlineStats";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
         <OverviewStats />
         <FlightCalendar />
         <GeoStats />
+        <AirlineStats />
       </div>
     </main>
   );

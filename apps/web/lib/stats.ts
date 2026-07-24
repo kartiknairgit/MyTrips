@@ -158,10 +158,11 @@ export interface AirlineStats {
 }
 
 export async function getAirlineStats(): Promise<AirlineStats> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("flights")
     .select("airline_iata, airline:airlines(alliance)")
     .eq("status", "completed");
+  if (error) throw error;
 
   const counts: Record<string, number> = {};
   const byAlliance: Record<string, number> = {};
