@@ -1,4 +1,12 @@
-import { supabase } from "./supabaseClient";
+import { assertSupabaseConfigured, supabase } from "./supabaseClient";
+
+async function getAuthenticatedUserId() {
+  assertSupabaseConfigured();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error("Sign in to view your flight statistics.");
+  return data.user.id;
+}
 
 export interface OverviewStats {
   totalFlights: number;
@@ -11,9 +19,11 @@ export interface OverviewStats {
 
 /** Stat #1: Trip Statistics Overview */
 export async function getOverviewStats(homeCountry?: string): Promise<OverviewStats> {
+  const userId = await getAuthenticatedUserId();
   const { data: stats, error: statsError } = await supabase
     .from("user_flight_stats")
     .select("total_flights, total_km, total_hours")
+    .eq("user_id", userId)
     .single();
 
   if (statsError && statsError.code !== "PGRST116") throw statsError;
@@ -36,6 +46,7 @@ export async function getOverviewStats(homeCountry?: string): Promise<OverviewSt
 
 /** Stat #2: Flight Calendar — monthly counts for a given year, for the bar chart */
 export async function getMonthlyCounts(year: number): Promise<number[]> {
+  assertSupabaseConfigured();
   const { data, error } = await supabase
     .from("flights")
     .select("departure_time")
@@ -48,30 +59,42 @@ export async function getMonthlyCounts(year: number): Promise<number[]> {
   if (!data) return counts;
 
   for (const row of data) {
-    const month = new Date(row.departure_time).getMonth();
+    const month = new Date(row.departure_time).getUTCMonth();
     counts[month]++;
   }
   return counts;
 }
 
 export async function getFlightYearRange(): Promise<{ years: number[]; hasFlights: boolean }> {
-  const currentYear = new Date().getFullYear();
+  assertSupabaseConfigured();
   const { data, error } = await supabase
     .from("flights")
     .select("departure_time")
-    .order("departure_time", { ascending: true })
-    .limit(1);
+    .order("departure_time", { ascending: true });
   if (error) throw error;
-  const earliest = data?.[0]?.departure_time
-    ? new Date(data[0].departure_time).getFullYear()
-    : currentYear;
+  return buildFlightYearRange((data ?? []).map((row) => row.departure_time));
+}
+
+export function buildFlightYearRange(
+  departureTimes: string[],
+  currentYear = new Date().getFullYear(),
+): { years: number[]; hasFlights: boolean } {
+  const validYears = departureTimes
+    .map((departureTime) => new Date(departureTime).getFullYear())
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  const earliestYear = validYears[0] ?? currentYear;
+  const latestYear = validYears.at(-1) ?? currentYear;
+  const firstYear = Math.min(earliestYear, currentYear);
+  const lastYear = Math.max(latestYear, currentYear);
   return {
-    years: Array.from({ length: currentYear - earliest + 1 }, (_, index) => earliest + index),
-    hasFlights: Boolean(data?.length),
+    years: Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index),
+    hasFlights: validYears.length > 0,
   };
 }
 
 export async function getDailyCounts(year: number, month: number): Promise<number[]> {
+  assertSupabaseConfigured();
   const start = new Date(Date.UTC(year, month, 1));
   const end = new Date(Date.UTC(year, month + 1, 1));
   const { data, error } = await supabase
@@ -97,6 +120,7 @@ export interface GeoStats {
 }
 
 export async function getGeoStats(): Promise<GeoStats> {
+  const userId = await getAuthenticatedUserId();
   const [
     { data: airports, error: airportError },
     { data: routes, error: routeError },
@@ -104,11 +128,13 @@ export async function getGeoStats(): Promise<GeoStats> {
     supabase
       .from("user_top_airports")
       .select("iata_code, visit_count")
+      .eq("user_id", userId)
       .order("visit_count", { ascending: false })
       .limit(1),
     supabase
       .from("user_top_routes")
       .select("route_pair, flight_count")
+      .eq("user_id", userId)
       .order("flight_count", { ascending: false })
       .limit(1),
   ]);
@@ -158,6 +184,7 @@ export interface AirlineStats {
 }
 
 export async function getAirlineStats(): Promise<AirlineStats> {
+  assertSupabaseConfigured();
   const { data, error } = await supabase
     .from("flights")
     .select("airline_iata, airline:airlines(alliance)")
@@ -185,6 +212,7 @@ export async function getAirlineStats(): Promise<AirlineStats> {
 
 /** Stat #6: Aircraft stats, grouped by manufacturer */
 export async function getAircraftStats(): Promise<Record<string, number>> {
+  assertSupabaseConfigured();
   const { data, error } = await supabase
     .from("flights")
     .select("aircraft:aircraft_types(manufacturer)")
