@@ -97,7 +97,6 @@ class _AddFlightScreenState extends State<AddFlightScreen> {
       'arrival_iata': _arrivalIataController.text.trim().toUpperCase(),
       'departure_time': _departureTime!.toIso8601String(),
       'arrival_time': _arrivalTime!.toIso8601String(),
-      'status': 'completed', // Default for manual entry
       'source': 'manual',
     };
 

@@ -129,6 +129,7 @@ class Flight {
 
   /// Recompute status from wall-clock time (mirrors compute_flight_status() in SQL).
   FlightStatus deriveStatus() {
+    if (status == FlightStatus.cancelled) return FlightStatus.cancelled;
     final now = DateTime.now();
     if (now.isBefore(departureTime)) return FlightStatus.scheduled;
     if (now.isBefore(arrivalTime)) return FlightStatus.inTransit;
@@ -142,6 +143,7 @@ class Flight {
     if (now.isAfter(arrivalTime)) return 1.0;
 
     final totalDuration = arrivalTime.difference(departureTime).inMilliseconds;
+    if (totalDuration <= 0) return 1.0;
     final elapsed = now.difference(departureTime).inMilliseconds;
     return (elapsed / totalDuration).clamp(0.0, 1.0);
   }
