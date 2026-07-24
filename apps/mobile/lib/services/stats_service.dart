@@ -275,4 +275,71 @@ class StatsService {
       throw Exception('Failed to fetch airline stats: $e');
     }
   }
+
+  /// Get aircraft statistics (manufacturer breakdown).
+  /// Groups by aircraft manufacturer, treating null aircraft_iata as "Unknown".
+  Future<Map<String, int>> getAircraftStats() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Fetch all flights with aircraft_iata
+      final response = await _client
+          .from('flights')
+          .select('aircraft_iata')
+          .eq('user_id', userId);
+
+      final flights = response as List;
+
+      if (flights.isEmpty) {
+        return {};
+      }
+
+      // Count flights by manufacturer (derived from aircraft IATA prefix)
+      final manufacturerCounts = <String, int>{};
+
+      for (final flight in flights) {
+        final aircraftIata = flight['aircraft_iata'] as String?;
+
+        String manufacturer;
+        if (aircraftIata == null || aircraftIata.isEmpty) {
+          manufacturer = 'Unknown';
+        } else {
+          // Derive manufacturer from aircraft IATA code
+          // Common patterns: A320 (Airbus), B737 (Boeing), E190 (Embraer), etc.
+          final firstChar = aircraftIata[0].toUpperCase();
+          switch (firstChar) {
+            case 'A':
+              manufacturer = 'Airbus';
+              break;
+            case 'B':
+              manufacturer = 'Boeing';
+              break;
+            case 'E':
+              manufacturer = 'Embraer';
+              break;
+            case 'C':
+              manufacturer = 'COMAC';
+              break;
+            case 'D':
+              manufacturer = 'McDonnell Douglas';
+              break;
+            case 'F':
+              manufacturer = 'Fokker';
+              break;
+            default:
+              manufacturer = 'Other';
+          }
+        }
+
+        manufacturerCounts[manufacturer] = (manufacturerCounts[manufacturer] ?? 0) + 1;
+      }
+
+      return manufacturerCounts;
+    } catch (e) {
+      throw Exception('Failed to fetch aircraft stats: $e');
+    }
+  }
 }
