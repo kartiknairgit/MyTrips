@@ -97,7 +97,10 @@ export interface GeoStats {
 }
 
 export async function getGeoStats(): Promise<GeoStats> {
-  const [{ data: airports }, { data: routes }] = await Promise.all([
+  const [
+    { data: airports, error: airportError },
+    { data: routes, error: routeError },
+  ] = await Promise.all([
     supabase
       .from("user_top_airports")
       .select("iata_code, visit_count")
@@ -113,10 +116,14 @@ export async function getGeoStats(): Promise<GeoStats> {
   // Continents/countries/cities: joined client-side from the airports table
   // touched by the user's own flights (RLS-safe — flights is still filtered
   // to auth.uid() under the hood).
-  const { data: touched } = await supabase
+  if (airportError) throw airportError;
+  if (routeError) throw routeError;
+
+  const { data: touched, error: touchedError } = await supabase
     .from("flights")
     .select("departure:airports!flights_departure_iata_fkey(country, continent, city), arrival:airports!flights_arrival_iata_fkey(country, continent, city)")
     .eq("status", "completed");
+  if (touchedError) throw touchedError;
 
   const continents = new Set<string>();
   const countries = new Set<string>();

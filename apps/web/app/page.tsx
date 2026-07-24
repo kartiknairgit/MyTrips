@@ -2,6 +2,7 @@ import MapView from "@/components/MapView";
 import FlightEntryForm from "@/components/FlightEntryForm";
 import OverviewStats from "@/components/OverviewStats";
 import FlightCalendar from "@/components/FlightCalendar";
+import GeoStats from "@/components/GeoStats";
 
 export default function Home() {
   return (
@@ -17,6 +18,7 @@ export default function Home() {
         </div>
         <OverviewStats />
         <FlightCalendar />
+        <GeoStats />
       </div>
     </main>
   );
