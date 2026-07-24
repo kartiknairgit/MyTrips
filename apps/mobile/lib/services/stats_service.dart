@@ -119,4 +119,160 @@ class StatsService {
       throw Exception('Failed to fetch year range: $e');
     }
   }
+
+  /// Get geographic statistics (continents, countries, cities, top airport, top route).
+  Future<Map<String, dynamic>> getGeoStats() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Fetch all flights with joined airport data
+      final response = await _client.from('flights').select('''
+        departure_iata,
+        arrival_iata,
+        departure:airports!flights_departure_iata_fkey(continent, country, city, name),
+        arrival:airports!flights_arrival_iata_fkey(continent, country, city, name)
+      ''').eq('user_id', userId);
+
+      final flights = response as List;
+
+      if (flights.isEmpty) {
+        return {
+          'continents': 0,
+          'countries': 0,
+          'cities': 0,
+          'topAirport': null,
+          'topRoute': null,
+        };
+      }
+
+      // Count unique continents, countries, cities
+      final continents = <String>{};
+      final countries = <String>{};
+      final cities = <String>{};
+      final airportCounts = <String, int>{};
+      final routeCounts = <String, int>{};
+
+      for (final flight in flights) {
+        final depAirport = flight['departure'] as Map<String, dynamic>?;
+        final arrAirport = flight['arrival'] as Map<String, dynamic>?;
+
+        // Add departure airport data
+        if (depAirport != null) {
+          if (depAirport['continent'] != null) continents.add(depAirport['continent'] as String);
+          if (depAirport['country'] != null) countries.add(depAirport['country'] as String);
+          if (depAirport['city'] != null) cities.add(depAirport['city'] as String);
+
+          final depIata = flight['departure_iata'] as String;
+          airportCounts[depIata] = (airportCounts[depIata] ?? 0) + 1;
+        }
+
+        // Add arrival airport data
+        if (arrAirport != null) {
+          if (arrAirport['continent'] != null) continents.add(arrAirport['continent'] as String);
+          if (arrAirport['country'] != null) countries.add(arrAirport['country'] as String);
+          if (arrAirport['city'] != null) cities.add(arrAirport['city'] as String);
+
+          final arrIata = flight['arrival_iata'] as String;
+          airportCounts[arrIata] = (airportCounts[arrIata] ?? 0) + 1;
+        }
+
+        // Count routes (origin-destination pairs)
+        final depIata = flight['departure_iata'] as String;
+        final arrIata = flight['arrival_iata'] as String;
+        final route = '$depIata-$arrIata';
+        routeCounts[route] = (routeCounts[route] ?? 0) + 1;
+      }
+
+      // Find top airport
+      String? topAirportIata;
+      int maxAirportCount = 0;
+      airportCounts.forEach((iata, count) {
+        if (count > maxAirportCount) {
+          topAirportIata = iata;
+          maxAirportCount = count;
+        }
+      });
+
+      // Find top route
+      String? topRoute;
+      int maxRouteCount = 0;
+      routeCounts.forEach((route, count) {
+        if (count > maxRouteCount) {
+          topRoute = route;
+          maxRouteCount = count;
+        }
+      });
+
+      return {
+        'continents': continents.length,
+        'countries': countries.length,
+        'cities': cities.length,
+        'topAirport': topAirportIata != null ? {'iata': topAirportIata, 'count': maxAirportCount} : null,
+        'topRoute': topRoute != null ? {'route': topRoute, 'count': maxRouteCount} : null,
+      };
+    } catch (e) {
+      throw Exception('Failed to fetch geo stats: $e');
+    }
+  }
+
+  /// Get airline statistics (alliance breakdown, top airline).
+  Future<Map<String, dynamic>> getAirlineStats() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Fetch all flights with joined airline data
+      final response = await _client.from('flights').select('''
+        airline_iata,
+        airline:airlines(name, alliance)
+      ''').eq('user_id', userId);
+
+      final flights = response as List;
+
+      if (flights.isEmpty) {
+        return {
+          'allianceCounts': <String, int>{},
+          'topAirline': null,
+        };
+      }
+
+      // Count flights by alliance
+      final allianceCounts = <String, int>{};
+      final airlineCounts = <String, int>{};
+
+      for (final flight in flights) {
+        final airline = flight['airline'] as Map<String, dynamic>?;
+        final airlineIata = flight['airline_iata'] as String?;
+
+        if (airline != null && airlineIata != null) {
+          final alliance = airline['alliance'] as String? ?? 'None';
+          allianceCounts[alliance] = (allianceCounts[alliance] ?? 0) + 1;
+
+          airlineCounts[airlineIata] = (airlineCounts[airlineIata] ?? 0) + 1;
+        }
+      }
+
+      // Find top airline
+      String? topAirlineIata;
+      int maxAirlineCount = 0;
+      airlineCounts.forEach((iata, count) {
+        if (count > maxAirlineCount) {
+          topAirlineIata = iata;
+          maxAirlineCount = count;
+        }
+      });
+
+      return {
+        'allianceCounts': allianceCounts,
+        'topAirline': topAirlineIata != null ? {'iata': topAirlineIata, 'count': maxAirlineCount} : null,
+      };
+    } catch (e) {
+      throw Exception('Failed to fetch airline stats: $e');
+    }
+  }
 }
