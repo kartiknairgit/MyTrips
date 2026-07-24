@@ -14,7 +14,7 @@ reasoning behind each cut/deferral.
 | 5 | Airline stats (alliance grouping, top airline) | ✅ Web UI built | Alliance doughnut chart and top-airline highlight use `getAirlineStats()` |
 | 6 | Aircraft stats (manufacturer grouping) | ✅ Web UI built | Manufacturer bar chart uses `getAircraftStats()` and preserves nullable aircraft as an Unknown bucket |
 | 7 | Content generation & sharing | ✅ Web UI built | Capability-gated client-only recording, poster rendering, Web Share, and direct-download fallback |
-| 8 | Compatibility quiz | ✅ Consent-gated backend built | `compat_requests` + `get_compat_report()`; UI flow (send request, accept, view report) not built |
+| 8 | Compatibility quiz | ✅ Web UI built | Send, accept/decline, consent-waiting, and aggregate-only report states use the frozen compatibility APIs |
 | 9 | Data-unlock / membership nudges | ❌ Dropped | Monetization explicitly out of scope — nothing to build under the UI |
 
 ## What's genuinely not started yet (UI layer)

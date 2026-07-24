@@ -4,6 +4,7 @@ import GeoStats from "@/components/GeoStats";
 import AirlineStats from "@/components/AirlineStats";
 import AircraftStats from "@/components/AircraftStats";
 import HeroWorkspace from "@/components/HeroWorkspace";
+import CompatibilityQuiz from "@/components/CompatibilityQuiz";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
         <GeoStats />
         <AirlineStats />
         <AircraftStats />
+        <CompatibilityQuiz />
       </div>
     </main>
   );
