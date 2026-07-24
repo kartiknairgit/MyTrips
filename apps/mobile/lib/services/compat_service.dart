@@ -1,181 +1,112 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
-/// Service for compatibility quiz operations.
 class CompatService {
-  final SupabaseClient _client = SupabaseService.instance.client;
+  final SupabaseClient _client;
 
-  /// Send a compatibility request to another user by their email.
-  Future<void> sendRequest(String otherUserEmail) async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
+  CompatService({SupabaseClient? client})
+      : _client = client ?? SupabaseService.instance.client;
 
-      // Look up the other user by email
-      final userResponse = await _client
-          .from('profiles')
-          .select('id')
-          .eq('email', otherUserEmail)
-          .maybeSingle();
+  static final _uuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      caseSensitive: false);
 
-      if (userResponse == null) {
-        throw Exception('User not found with email: $otherUserEmail');
-      }
-
-      final otherUserId = userResponse['id'] as String;
-
-      if (otherUserId == userId) {
-        throw Exception('Cannot send request to yourself');
-      }
-
-      // Check if request already exists
-      final existingRequest = await _client
-          .from('compat_requests')
-          .select()
-          .eq('requester_id', userId)
-          .eq('requested_id', otherUserId)
-          .maybeSingle();
-
-      if (existingRequest != null) {
-        throw Exception('Request already sent to this user');
-      }
-
-      // Create request
-      await _client.from('compat_requests').insert({
-        'requester_id': userId,
-        'requested_id': otherUserId,
-        'status': 'pending',
-      });
-    } catch (e) {
-      throw Exception('Failed to send compatibility request: $e');
+  static Map<String, dynamic> requestInsert(
+      String requesterId, String targetId) {
+    if (!_uuid.hasMatch(targetId)) {
+      throw const FormatException('Enter a complete flyer user ID.');
     }
+    if (requesterId == targetId) {
+      throw const FormatException('You cannot compare with yourself.');
+    }
+    return {
+      'requester_id': requesterId,
+      'target_id': targetId,
+      'status': 'pending',
+    };
   }
 
-  /// Get all pending requests sent by current user.
+  Future<void> sendRequest(String targetId) async {
+    final userId = _requireUser();
+    final payload = requestInsert(userId, targetId.trim());
+    final existing = await _client
+        .from('compat_requests')
+        .select('id')
+        .eq('requester_id', userId)
+        .eq('target_id', targetId.trim())
+        .maybeSingle();
+    if (existing != null) {
+      throw Exception('A request to this flyer already exists.');
+    }
+    await _client.from('compat_requests').insert(payload);
+  }
+
   Future<List<Map<String, dynamic>>> getSentRequests() async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _client
-          .from('compat_requests')
-          .select(
-              '*, requested:profiles!compat_requests_requested_id_fkey(email)')
-          .eq('requester_id', userId)
-          .order('created_at', ascending: false);
-
-      return (response as List).cast<Map<String, dynamic>>();
-    } catch (e) {
-      throw Exception('Failed to fetch sent requests: $e');
-    }
+    final response = await _client
+        .from('compat_requests')
+        .select()
+        .eq('requester_id', _requireUser())
+        .order('created_at', ascending: false);
+    return (response as List).cast<Map<String, dynamic>>();
   }
 
-  /// Get all pending requests received by current user.
   Future<List<Map<String, dynamic>>> getReceivedRequests() async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _client
-          .from('compat_requests')
-          .select(
-              '*, requester:profiles!compat_requests_requester_id_fkey(email)')
-          .eq('requested_id', userId)
-          .eq('status', 'pending')
-          .order('created_at', ascending: false);
-
-      return (response as List).cast<Map<String, dynamic>>();
-    } catch (e) {
-      throw Exception('Failed to fetch received requests: $e');
-    }
+    final response = await _client
+        .from('compat_requests')
+        .select()
+        .eq('target_id', _requireUser())
+        .eq('status', 'pending')
+        .order('created_at', ascending: false);
+    return (response as List).cast<Map<String, dynamic>>();
   }
 
-  /// Accept a compatibility request.
-  Future<void> acceptRequest(String requestId) async {
-    try {
-      await _client
-          .from('compat_requests')
-          .update({'status': 'accepted'}).eq('id', requestId);
-    } catch (e) {
-      throw Exception('Failed to accept request: $e');
-    }
+  Future<void> acceptRequest(String requestId) =>
+      _respond(requestId, 'accepted');
+
+  Future<void> declineRequest(String requestId) =>
+      _respond(requestId, 'declined');
+
+  Future<void> _respond(String requestId, String status) async {
+    await _client
+        .from('compat_requests')
+        .update({
+          'status': status,
+          'responded_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', requestId)
+        .eq('target_id', _requireUser());
   }
 
-  /// Decline a compatibility request.
-  Future<void> declineRequest(String requestId) async {
-    try {
-      await _client
-          .from('compat_requests')
-          .update({'status': 'declined'}).eq('id', requestId);
-    } catch (e) {
-      throw Exception('Failed to decline request: $e');
+  Future<Map<String, dynamic>?> getCompatReport(String requestId) async {
+    final request = await _client
+        .from('compat_requests')
+        .select('status')
+        .eq('id', requestId)
+        .maybeSingle();
+    if (request == null) throw Exception('Compatibility request not found.');
+    if (request['status'] != 'accepted') {
+      throw Exception('Waiting for the invited flyer to accept.');
     }
+    final response = await _client
+        .rpc('get_compat_report', params: {'request_id': requestId});
+    if (response is! List || response.isEmpty) return null;
+    return response.first as Map<String, dynamic>;
   }
 
-  /// Get compatibility report for a specific user.
-  /// Returns aggregate stats (shared airports, airlines, routes) via get_compat_report RPC.
-  Future<Map<String, dynamic>?> getCompatReport(String otherUserId) async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Check if there's an accepted request between these users
-      final request = await _client
-          .from('compat_requests')
-          .select()
-          .eq('status', 'accepted')
-          .or('requester_id.eq.$userId,requested_id.eq.$userId')
-          .or('requester_id.eq.$otherUserId,requested_id.eq.$otherUserId')
-          .maybeSingle();
-
-      if (request == null) {
-        throw Exception('No accepted compatibility request with this user');
-      }
-
-      // Call get_compat_report RPC
-      final response = await _client.rpc('get_compat_report', params: {
-        'other_user': otherUserId,
-      });
-
-      if (response == null) {
-        return null;
-      }
-
-      return response as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception('Failed to fetch compatibility report: $e');
-    }
-  }
-
-  /// Get list of users with accepted compatibility requests.
   Future<List<Map<String, dynamic>>> getAcceptedCompats() async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
+    final userId = _requireUser();
+    final response = await _client
+        .from('compat_requests')
+        .select()
+        .eq('status', 'accepted')
+        .or('requester_id.eq.$userId,target_id.eq.$userId')
+        .order('created_at', ascending: false);
+    return (response as List).cast<Map<String, dynamic>>();
+  }
 
-      final response = await _client
-          .from('compat_requests')
-          .select('''
-            *,
-            requester:profiles!compat_requests_requester_id_fkey(id, email),
-            requested:profiles!compat_requests_requested_id_fkey(id, email)
-          ''')
-          .eq('status', 'accepted')
-          .or('requester_id.eq.$userId,requested_id.eq.$userId');
-
-      return (response as List).cast<Map<String, dynamic>>();
-    } catch (e) {
-      throw Exception('Failed to fetch accepted compatibilities: $e');
-    }
+  String _requireUser() {
+    final id = _client.auth.currentUser?.id;
+    if (id == null) throw Exception('Sign in to use compatibility.');
+    return id;
   }
 }

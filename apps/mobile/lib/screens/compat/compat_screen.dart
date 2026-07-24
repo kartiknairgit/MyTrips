@@ -66,10 +66,10 @@ class _CompatScreenState extends State<CompatScreen>
   }
 
   Future<void> _handleSendRequest() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
+    final targetId = _emailController.text.trim();
+    if (targetId.isEmpty) {
       setState(() {
-        _sendError = 'Please enter an email address';
+        _sendError = 'Please enter a flyer user ID';
       });
       return;
     }
@@ -80,7 +80,7 @@ class _CompatScreenState extends State<CompatScreen>
     });
 
     try {
-      await _compatService.sendRequest(email);
+      await _compatService.sendRequest(targetId);
       _emailController.clear();
 
       if (!mounted) return;
@@ -156,9 +156,9 @@ class _CompatScreenState extends State<CompatScreen>
     }
   }
 
-  Future<void> _viewReport(String otherUserId, String otherUserEmail) async {
+  Future<void> _viewReport(String requestId, String label) async {
     try {
-      final report = await _compatService.getCompatReport(otherUserId);
+      final report = await _compatService.getCompatReport(requestId);
 
       if (!mounted) return;
 
@@ -172,7 +172,7 @@ class _CompatScreenState extends State<CompatScreen>
         return;
       }
 
-      _showReportDialog(otherUserEmail, report);
+      _showReportDialog(label, report);
     } catch (e) {
       if (!mounted) return;
 
@@ -185,13 +185,13 @@ class _CompatScreenState extends State<CompatScreen>
     }
   }
 
-  void _showReportDialog(String otherUserEmail, Map<String, dynamic> report) {
+  void _showReportDialog(String label, Map<String, dynamic> report) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1a1a1a),
         title: Text(
-          'Compatibility with $otherUserEmail',
+          'Compatibility $label',
           style: const TextStyle(color: Colors.white),
         ),
         content: SingleChildScrollView(
@@ -205,6 +205,8 @@ class _CompatScreenState extends State<CompatScreen>
                   report['shared_airlines']?.toString() ?? '0'),
               _buildReportItem(
                   'Shared Routes', report['shared_routes']?.toString() ?? '0'),
+              _buildReportItem('Compatibility score',
+                  '${report['compatibility_score'] ?? 0}%'),
             ],
           ),
         ),
@@ -327,7 +329,7 @@ class _CompatScreenState extends State<CompatScreen>
           ),
           const SizedBox(height: 8),
           const Text(
-            'Enter the email of another user to compare your flight histories.',
+            'Enter another flyer’s user ID. Reports remain locked until they accept.',
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 24),
@@ -335,13 +337,13 @@ class _CompatScreenState extends State<CompatScreen>
             controller: _emailController,
             style: const TextStyle(color: Colors.white),
             decoration: const InputDecoration(
-              labelText: 'Email',
+              labelText: 'Flyer user ID',
               labelStyle: TextStyle(color: Colors.white70),
               filled: true,
               fillColor: Colors.white10,
               border: OutlineInputBorder(),
             ),
-            keyboardType: TextInputType.emailAddress,
+            keyboardType: TextInputType.text,
           ),
           const SizedBox(height: 16),
           if (_sendError != null)
@@ -390,8 +392,7 @@ class _CompatScreenState extends State<CompatScreen>
             )
           else
             ..._sentRequests.map((request) {
-              final requestedEmail =
-                  request['requested']?['email'] ?? 'Unknown';
+              final targetId = request['target_id'] as String;
               final status = request['status'] as String;
 
               return Container(
@@ -410,7 +411,7 @@ class _CompatScreenState extends State<CompatScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            requestedEmail,
+                            _shortId(targetId),
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 14),
                           ),
@@ -460,8 +461,7 @@ class _CompatScreenState extends State<CompatScreen>
             )
           else
             ..._receivedRequests.map((request) {
-              final requesterEmail =
-                  request['requester']?['email'] ?? 'Unknown';
+              final requesterId = request['requester_id'] as String;
               final requestId = request['id'] as String;
 
               return Container(
@@ -476,7 +476,7 @@ class _CompatScreenState extends State<CompatScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      requesterEmail,
+                      _shortId(requesterId),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -540,19 +540,8 @@ class _CompatScreenState extends State<CompatScreen>
             )
           else
             ..._acceptedCompats.map((compat) {
-              final requesterProfile =
-                  compat['requester'] as Map<String, dynamic>?;
-              final requestedProfile =
-                  compat['requested'] as Map<String, dynamic>?;
-
-              // Determine which user is "the other user"
-              final currentUserId = compat['requester_id'];
-              final otherProfile = currentUserId == requesterProfile?['id']
-                  ? requestedProfile
-                  : requesterProfile;
-
-              final otherEmail = otherProfile?['email'] ?? 'Unknown';
-              final otherUserId = otherProfile?['id'] ?? '';
+              final requestId = compat['id'] as String;
+              final label = '#${_shortId(requestId)}';
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -567,7 +556,7 @@ class _CompatScreenState extends State<CompatScreen>
                   children: [
                     Expanded(
                       child: Text(
-                        otherEmail,
+                        label,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -575,7 +564,7 @@ class _CompatScreenState extends State<CompatScreen>
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () => _viewReport(otherUserId, otherEmail),
+                      onPressed: () => _viewReport(requestId, label),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF10F0),
                         foregroundColor: Colors.black,
@@ -590,4 +579,8 @@ class _CompatScreenState extends State<CompatScreen>
       ),
     );
   }
+
+  String _shortId(String value) => value.length > 12
+      ? '${value.substring(0, 8)}…${value.substring(value.length - 4)}'
+      : value;
 }
