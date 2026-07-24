@@ -44,12 +44,46 @@ export async function getMonthlyCounts(year: number): Promise<number[]> {
     .lt("departure_time", `${year + 1}-01-01`);
 
   const counts = new Array(12).fill(0);
-  if (error || !data) return counts;
+  if (error) throw error;
+  if (!data) return counts;
 
   for (const row of data) {
     const month = new Date(row.departure_time).getMonth();
     counts[month]++;
   }
+  return counts;
+}
+
+export async function getFlightYearRange(): Promise<{ years: number[]; hasFlights: boolean }> {
+  const currentYear = new Date().getFullYear();
+  const { data, error } = await supabase
+    .from("flights")
+    .select("departure_time")
+    .order("departure_time", { ascending: true })
+    .limit(1);
+  if (error) throw error;
+  const earliest = data?.[0]?.departure_time
+    ? new Date(data[0].departure_time).getFullYear()
+    : currentYear;
+  return {
+    years: Array.from({ length: currentYear - earliest + 1 }, (_, index) => earliest + index),
+    hasFlights: Boolean(data?.length),
+  };
+}
+
+export async function getDailyCounts(year: number, month: number): Promise<number[]> {
+  const start = new Date(Date.UTC(year, month, 1));
+  const end = new Date(Date.UTC(year, month + 1, 1));
+  const { data, error } = await supabase
+    .from("flights")
+    .select("departure_time")
+    .eq("status", "completed")
+    .gte("departure_time", start.toISOString())
+    .lt("departure_time", end.toISOString());
+  if (error) throw error;
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const counts = new Array(days).fill(0);
+  for (const row of data ?? []) counts[new Date(row.departure_time).getUTCDate() - 1]++;
   return counts;
 }
 

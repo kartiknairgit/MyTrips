@@ -8,7 +8,7 @@ reasoning behind each cut/deferral.
 |---|---|---|---|
 | 0 | Flight entry (manual + lookup confirmation) | ✅ Web UI built | Editable lookup/manual confirmation flow with wall-clock-derived status |
 | 1 | Trip stats overview (mileage, duration, count, percentile) | ✅ Web UI built | Stat cards use `getOverviewStats()` with scope-aware badge copy and a home-country profile setting |
-| 2 | Flight calendar (month/day toggle, bar chart, year filter) | ✅ Data layer built, UI not built | `lib/stats.ts::getMonthlyCounts()` returns the array a bar-chart component consumes; day-view/UI still to build |
+| 2 | Flight calendar (month/day toggle, bar chart, year filter) | ✅ Web UI built | Recharts month/day views; year options span the user’s earliest flight through the current year |
 | 3 | Route map (2D/3D toggle, arrows, zoom, train toggle) | 🟡 2D done, 3D + train stubbed | 2D arcs from v1 `MapView.tsx`; 3D fly-through exists via `footprintExport.ts`'s camera animation but no dedicated 3D *viewing* mode yet; train toggle is UI-only placeholder, no data source |
 | 4 | Geo stats (continents/countries/cities, top airport/route) | ✅ Schema + client lib built | `airports.city/continent`, `user_top_airports`, `user_top_routes`, `lib/stats.ts::getGeoStats()` |
 | 5 | Airline stats (alliance grouping, top airline) | ✅ Schema + client lib built | `airlines.alliance` enum, `lib/stats.ts::getAirlineStats()` |
