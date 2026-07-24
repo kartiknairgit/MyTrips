@@ -24,7 +24,7 @@ export default function AircraftStats() {
   );
 
   return (
-    <section className="panel stats-panel" aria-labelledby="aircraft-title">
+    <section className="panel stats-panel" id="aircraft" aria-labelledby="aircraft-title">
       <div className="eyebrow">What you flew on</div>
       <h2 className="section-title" id="aircraft-title">Aircraft manufacturers</h2>
       <p className="section-copy">Flights without an aircraft type stay visible as Unknown, so incomplete lookup data never disappears.</p>

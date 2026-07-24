@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { assertSupabaseConfigured, supabase } from "@/lib/supabaseClient";
 
 interface CompatRequest {
   id: string;
@@ -32,6 +32,13 @@ export default function CompatibilityQuiz() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    try {
+      assertSupabaseConfigured();
+    } catch (configurationError) {
+      setLoading(false);
+      setError(configurationError instanceof Error ? configurationError.message : "Supabase is not configured.");
+      return;
+    }
     const { data: auth, error: authError } = await supabase.auth.getUser();
     if (authError || !auth.user) {
       setLoading(false);
@@ -124,7 +131,7 @@ export default function CompatibilityQuiz() {
   }
 
   return (
-    <section className="panel stats-panel" aria-labelledby="compat-title">
+    <section className="panel stats-panel" id="compatibility" aria-labelledby="compat-title">
       <div className="eyebrow">Compare by consent</div>
       <h2 className="section-title" id="compat-title">Flight compatibility</h2>
       <p className="section-copy">Invite another flyer, then compare only aggregate overlap after they accept. Individual flight lists always stay private.</p>

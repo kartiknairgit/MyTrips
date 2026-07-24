@@ -32,7 +32,7 @@ export default function AirlineStats() {
   })), [stats]);
 
   return (
-    <section className="panel stats-panel" aria-labelledby="airline-title">
+    <section className="panel stats-panel" id="airlines" aria-labelledby="airline-title">
       <div className="eyebrow">Who carried you</div>
       <h2 className="section-title" id="airline-title">Airline statistics</h2>
       {loading ? (

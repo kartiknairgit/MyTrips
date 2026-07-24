@@ -20,7 +20,7 @@ export default function GeoStats() {
   const empty = stats && stats.continents === 0 && stats.countries === 0 && stats.cities === 0;
 
   return (
-    <section className="panel stats-panel" aria-labelledby="geo-title">
+    <section className="panel stats-panel" id="geography" aria-labelledby="geo-title">
       <div className="eyebrow">Where you’ve been</div>
       <h2 className="section-title" id="geo-title">Geographic reach</h2>
       {loading ? (

@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { deriveStatus } from "@/lib/flightPath";
-import { supabase } from "@/lib/supabaseClient";
+import { assertSupabaseConfigured, supabase } from "@/lib/supabaseClient";
 
 type EntryMode = "lookup" | "manual";
 type Step = "edit" | "confirm";
@@ -85,6 +85,12 @@ export default function FlightEntryForm() {
       setError("Enter a flight code and travel date to look it up.");
       return;
     }
+    try {
+      assertSupabaseConfigured();
+    } catch (configurationError) {
+      setError(configurationError instanceof Error ? configurationError.message : "Supabase is not configured.");
+      return;
+    }
     setBusy(true);
     const { data, error: lookupError } = await supabase.functions.invoke("lookup-flight", {
       body: { flight_iata: draft.flight_number.trim().toUpperCase(), flight_date: lookupDate },
@@ -125,6 +131,12 @@ export default function FlightEntryForm() {
       setError(validationError);
       return;
     }
+    try {
+      assertSupabaseConfigured();
+    } catch (configurationError) {
+      setError(configurationError instanceof Error ? configurationError.message : "Supabase is not configured.");
+      return;
+    }
     setBusy(true);
     setError(null);
     const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -158,7 +170,7 @@ export default function FlightEntryForm() {
   }
 
   return (
-    <section className="panel" aria-labelledby="add-flight-title">
+    <section className="panel" id="add-flight" aria-labelledby="add-flight-title">
       <div className="eyebrow">Build your route history</div>
       <h2 className="section-title" id="add-flight-title">Add a flight</h2>
       <p className="section-copy">

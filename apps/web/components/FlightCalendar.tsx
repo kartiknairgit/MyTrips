@@ -57,7 +57,7 @@ export default function FlightCalendar() {
   const selectedTotal = counts.reduce((sum, count) => sum + count, 0);
 
   return (
-    <section className="panel chart-panel" aria-labelledby="calendar-title">
+    <section className="panel chart-panel" id="calendar" aria-labelledby="calendar-title">
       <div className="section-heading">
         <div>
           <div className="eyebrow">When you flew</div>

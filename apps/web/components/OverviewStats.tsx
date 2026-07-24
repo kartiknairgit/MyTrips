@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { getOverviewStats, OverviewStats as OverviewStatsData } from "@/lib/stats";
-import { supabase } from "@/lib/supabaseClient";
+import { assertSupabaseConfigured, supabase } from "@/lib/supabaseClient";
 
 export default function OverviewStats() {
   const [stats, setStats] = useState<OverviewStatsData | null>(null);
@@ -16,6 +16,7 @@ export default function OverviewStats() {
     setLoading(true);
     setError(null);
     try {
+      assertSupabaseConfigured();
       const { data: auth } = await supabase.auth.getUser();
       let country = "";
       if (auth.user) {
@@ -43,6 +44,13 @@ export default function OverviewStats() {
     setSaving(true);
     setError(null);
     setMessage(null);
+    try {
+      assertSupabaseConfigured();
+    } catch (configurationError) {
+      setSaving(false);
+      setError(configurationError instanceof Error ? configurationError.message : "Supabase is not configured.");
+      return;
+    }
     const { data: auth, error: authError } = await supabase.auth.getUser();
     if (authError || !auth.user) {
       setSaving(false);
@@ -70,7 +78,7 @@ export default function OverviewStats() {
   }
 
   return (
-    <section className="dashboard-section" aria-labelledby="overview-title">
+    <section className="dashboard-section" id="overview" aria-labelledby="overview-title">
       <div className="section-heading">
         <div>
           <div className="eyebrow">At a glance</div>
