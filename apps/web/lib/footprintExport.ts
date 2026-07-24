@@ -38,8 +38,14 @@ export async function recordFlightFootprint(
 ): Promise<Blob> {
   const msPerFlight = options.msPerFlight ?? 2000;
   const canvas = map.getCanvas();
+  if (!("captureStream" in canvas) || typeof MediaRecorder === "undefined") {
+    throw new Error("Video recording is not supported in this browser.");
+  }
   const stream = canvas.captureStream(30); // 30fps
-  const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+    ? "video/webm;codecs=vp9"
+    : "video/webm";
+  const recorder = new MediaRecorder(stream, { mimeType });
   const chunks: Blob[] = [];
 
   recorder.ondataavailable = (e) => {
@@ -71,13 +77,13 @@ export async function recordFlightFootprint(
 export function renderPoster(
   map: maplibregl.Map,
   stats: { totalFlights: number; totalKm: number; totalHours: number },
-): Blob | null {
+): Promise<Blob | null> {
   const mapCanvas = map.getCanvas();
   const poster = document.createElement("canvas");
   poster.width = mapCanvas.width;
   poster.height = mapCanvas.height + 160; // extra space for stats banner
   const ctx = poster.getContext("2d");
-  if (!ctx) return null;
+  if (!ctx) return Promise.resolve(null);
 
   ctx.drawImage(mapCanvas, 0, 0);
   ctx.fillStyle = "#0a0a0a";
@@ -90,9 +96,7 @@ export function renderPoster(
     mapCanvas.height + 90,
   );
 
-  let blob: Blob | null = null;
-  poster.toBlob((b) => (blob = b), "image/png");
-  return blob; // Note: toBlob is async in practice; wrap in a Promise in real usage.
+  return new Promise((resolve) => poster.toBlob(resolve, "image/png"));
 }
 
 /** Share via native share sheet where available, else fall back to download. */
@@ -107,7 +111,7 @@ export async function shareOrDownload(blob: Blob, filename: string) {
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function sleep(ms: number) {

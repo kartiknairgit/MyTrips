@@ -1,10 +1,9 @@
-import MapView from "@/components/MapView";
-import FlightEntryForm from "@/components/FlightEntryForm";
 import OverviewStats from "@/components/OverviewStats";
 import FlightCalendar from "@/components/FlightCalendar";
 import GeoStats from "@/components/GeoStats";
 import AirlineStats from "@/components/AirlineStats";
 import AircraftStats from "@/components/AircraftStats";
+import HeroWorkspace from "@/components/HeroWorkspace";
 
 export default function Home() {
   return (
@@ -14,10 +13,7 @@ export default function Home() {
         <span className="eyebrow">Your world in motion</span>
       </header>
       <div className="content">
-        <div className="hero">
-          <div className="panel map-panel"><MapView /></div>
-          <FlightEntryForm />
-        </div>
+        <HeroWorkspace />
         <OverviewStats />
         <FlightCalendar />
         <GeoStats />

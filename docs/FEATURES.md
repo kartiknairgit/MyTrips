@@ -13,7 +13,7 @@ reasoning behind each cut/deferral.
 | 4 | Geo stats (continents/countries/cities, top airport/route) | ✅ Web UI built | Geographic reach counts and top-airport/route cards use `getGeoStats()` |
 | 5 | Airline stats (alliance grouping, top airline) | ✅ Web UI built | Alliance doughnut chart and top-airline highlight use `getAirlineStats()` |
 | 6 | Aircraft stats (manufacturer grouping) | ✅ Web UI built | Manufacturer bar chart uses `getAircraftStats()` and preserves nullable aircraft as an Unknown bucket |
-| 7 | Content generation & sharing | ✅ Client-side export built | `footprintExport.ts` — canvas + MediaRecorder video, canvas poster, Web Share API. No server-rendered video (cost) |
+| 7 | Content generation & sharing | ✅ Web UI built | Capability-gated client-only recording, poster rendering, Web Share, and direct-download fallback |
 | 8 | Compatibility quiz | ✅ Consent-gated backend built | `compat_requests` + `get_compat_report()`; UI flow (send request, accept, view report) not built |
 | 9 | Data-unlock / membership nudges | ❌ Dropped | Monetization explicitly out of scope — nothing to build under the UI |
 

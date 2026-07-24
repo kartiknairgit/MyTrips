@@ -10,12 +10,19 @@ import {
   greatCircleArc,
   paintForStatus,
 } from "@/lib/flightPath";
+import type { FlightForAnimation } from "@/lib/footprintExport";
 
 // OpenFreeMap: free, no API key, no usage cap, no account required.
 // Swap this URL for a self-hosted PMTiles style later if you ever want to.
 const FREE_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
-export default function MapView() {
+export default function MapView({
+  onReady,
+  onFlightsChange,
+}: {
+  onReady?: (map: maplibregl.Map | null) => void;
+  onFlightsChange?: (flights: FlightForAnimation[]) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -27,11 +34,13 @@ export default function MapView() {
       style: FREE_MAP_STYLE,
       center: [30, 15],
       zoom: 1.5,
+      preserveDrawingBuffer: true,
     });
     mapRef.current = map;
+    onReady?.(map);
 
     map.on("load", async () => {
-      await loadAndRenderFlights(map);
+      await loadAndRenderFlights(map, onFlightsChange);
     });
 
     // Realtime: when a flight's status flips (e.g. scheduled -> in_transit),
@@ -41,26 +50,30 @@ export default function MapView() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "flights" },
-        () => loadAndRenderFlights(map),
+        () => loadAndRenderFlights(map, onFlightsChange),
       )
       .subscribe();
 
     // Re-derive in_transit progress every 30s even with no DB change,
     // since "now" moving forward is what advances the plane icon.
-    const interval = setInterval(() => loadAndRenderFlights(map), 30_000);
+    const interval = setInterval(() => loadAndRenderFlights(map, onFlightsChange), 30_000);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
+      onReady?.(null);
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [onFlightsChange, onReady]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} aria-label="Map of your flight routes" />;
 }
 
-async function loadAndRenderFlights(map: maplibregl.Map) {
+async function loadAndRenderFlights(
+  map: maplibregl.Map,
+  onFlightsChange?: (flights: FlightForAnimation[]) => void,
+) {
   // Joins airports (dep/arr lat/lng) and airlines (brand_color_hex) at query time.
   const { data, error } = await supabase
     .from("flights")
@@ -91,6 +104,12 @@ async function loadAndRenderFlights(map: maplibregl.Map) {
     arrival_lng: f.arrival.lng,
     airline_color: f.airline?.brand_color_hex ?? "#6b7280",
   }));
+  onFlightsChange?.(rows.map((flight) => ({
+    id: flight.id,
+    departure: [flight.departure_lng, flight.departure_lat],
+    arrival: [flight.arrival_lng, flight.arrival_lat],
+    departureTime: flight.departure_time,
+  })));
 
   for (const flight of rows) {
     const sourceId = `flight-${flight.id}`;
