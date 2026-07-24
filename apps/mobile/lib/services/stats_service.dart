@@ -126,12 +126,14 @@ class StatsService {
 
   static List<int> yearRangeFromRows(List<dynamic> rows, DateTime now) {
     if (rows.isEmpty) return [now.year];
-    final earliest = rows
+    final years = rows
         .map((row) => DateTime.parse(
             (row as Map<String, dynamic>)['departure_time'] as String))
         .map((date) => date.year)
-        .reduce((a, b) => a < b ? a : b);
-    final latest = earliest > now.year ? earliest : now.year;
+        .toList();
+    final earliest = years.reduce((a, b) => a < b ? a : b);
+    final flightLatest = years.reduce((a, b) => a > b ? a : b);
+    final latest = flightLatest > now.year ? flightLatest : now.year;
     return List.generate(latest - earliest + 1, (index) => earliest + index);
   }
 

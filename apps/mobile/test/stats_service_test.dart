@@ -13,6 +13,14 @@ void main() {
     expect(StatsService.yearRangeFromRows([], DateTime.utc(2026)), [2026]);
   });
 
+  test('future flights remain selectable', () {
+    expect(
+        StatsService.yearRangeFromRows([
+          {'departure_time': '2028-01-01T00:00:00Z'}
+        ], DateTime.utc(2026)),
+        [2028]);
+  });
+
   test('daily counts use UTC departure dates', () {
     final counts = StatsService.countDays([
       {'departure_time': '2026-07-02T00:30:00Z'},
