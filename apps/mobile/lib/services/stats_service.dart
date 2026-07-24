@@ -38,13 +38,20 @@ class StatsService {
         throw Exception('User not authenticated');
       }
 
-      final response = await _client.rpc('my_mileage_percentile');
+      final profile = await _client
+          .from('profiles')
+          .select('home_country')
+          .eq('id', userId)
+          .maybeSingle();
+      final response = await _client.rpc('my_mileage_percentile', params: {
+        'scope_country': profile?['home_country'],
+      });
 
-      if (response == null) {
+      if (response is! List || response.isEmpty) {
         return MileagePercentile.empty();
       }
 
-      return MileagePercentile.fromJson(response as Map<String, dynamic>);
+      return MileagePercentile.fromJson(response.first as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Failed to fetch mileage percentile: $e');
     }
@@ -67,6 +74,7 @@ class StatsService {
           .from('flights')
           .select('departure_time')
           .eq('user_id', userId)
+          .eq('status', 'completed')
           .gte('departure_time', startDate)
           .lt('departure_time', endDate);
 
@@ -89,6 +97,44 @@ class StatsService {
     }
   }
 
+  Future<Map<int, int>> getDailyCounts(int year, int month) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+    final start = DateTime.utc(year, month);
+    final end = DateTime.utc(year, month + 1);
+    final response = await _client
+        .from('flights')
+        .select('departure_time')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('departure_time', start.toIso8601String())
+        .lt('departure_time', end.toIso8601String());
+    return countDays(response as List, year, month);
+  }
+
+  static Map<int, int> countDays(List<dynamic> rows, int year, int month) {
+    final days = DateTime.utc(year, month + 1, 0).day;
+    final result = {for (var day = 1; day <= days; day++) day: 0};
+    for (final row in rows) {
+      final date = DateTime.parse(
+              (row as Map<String, dynamic>)['departure_time'] as String)
+          .toUtc();
+      result[date.day] = (result[date.day] ?? 0) + 1;
+    }
+    return result;
+  }
+
+  static List<int> yearRangeFromRows(List<dynamic> rows, DateTime now) {
+    if (rows.isEmpty) return [now.year];
+    final earliest = rows
+        .map((row) => DateTime.parse(
+            (row as Map<String, dynamic>)['departure_time'] as String))
+        .map((date) => date.year)
+        .reduce((a, b) => a < b ? a : b);
+    final latest = earliest > now.year ? earliest : now.year;
+    return List.generate(latest - earliest + 1, (index) => earliest + index);
+  }
+
   /// Get the year range of user's flights (min year to max year).
   /// Returns null if user has no flights.
   Future<List<int>?> getYearRange() async {
@@ -104,20 +150,7 @@ class StatsService {
           .eq('user_id', userId)
           .order('departure_time', ascending: true);
 
-      if ((response as List).isEmpty) {
-        return null;
-      }
-
-      final flights = response as List;
-      final firstFlight =
-          DateTime.parse(flights.first['departure_time'] as String);
-      final lastFlight =
-          DateTime.parse(flights.last['departure_time'] as String);
-
-      final minYear = firstFlight.year;
-      final maxYear = lastFlight.year;
-
-      return List.generate(maxYear - minYear + 1, (i) => minYear + i);
+      return yearRangeFromRows(response as List, DateTime.now());
     } catch (e) {
       throw Exception('Failed to fetch year range: $e');
     }
@@ -137,7 +170,7 @@ class StatsService {
         arrival_iata,
         departure:airports!flights_departure_iata_fkey(continent, country, city, name),
         arrival:airports!flights_arrival_iata_fkey(continent, country, city, name)
-      ''').eq('user_id', userId);
+      ''').eq('user_id', userId).eq('status', 'completed');
 
       final flights = response as List;
 
@@ -243,7 +276,7 @@ class StatsService {
       final response = await _client.from('flights').select('''
         airline_iata,
         airline:airlines(name, alliance)
-      ''').eq('user_id', userId);
+      ''').eq('user_id', userId).eq('status', 'completed');
 
       final flights = response as List;
 
@@ -300,11 +333,12 @@ class StatsService {
         throw Exception('User not authenticated');
       }
 
-      // Fetch all flights with aircraft_iata
+      // Fetch manufacturer through the frozen aircraft_types relationship.
       final response = await _client
           .from('flights')
-          .select('aircraft_iata')
-          .eq('user_id', userId);
+          .select('aircraft:aircraft_types(manufacturer)')
+          .eq('user_id', userId)
+          .eq('status', 'completed');
 
       final flights = response as List;
 
@@ -316,38 +350,8 @@ class StatsService {
       final manufacturerCounts = <String, int>{};
 
       for (final flight in flights) {
-        final aircraftIata = flight['aircraft_iata'] as String?;
-
-        String manufacturer;
-        if (aircraftIata == null || aircraftIata.isEmpty) {
-          manufacturer = 'Unknown';
-        } else {
-          // Derive manufacturer from aircraft IATA code
-          // Common patterns: A320 (Airbus), B737 (Boeing), E190 (Embraer), etc.
-          final firstChar = aircraftIata[0].toUpperCase();
-          switch (firstChar) {
-            case 'A':
-              manufacturer = 'Airbus';
-              break;
-            case 'B':
-              manufacturer = 'Boeing';
-              break;
-            case 'E':
-              manufacturer = 'Embraer';
-              break;
-            case 'C':
-              manufacturer = 'COMAC';
-              break;
-            case 'D':
-              manufacturer = 'McDonnell Douglas';
-              break;
-            case 'F':
-              manufacturer = 'Fokker';
-              break;
-            default:
-              manufacturer = 'Other';
-          }
-        }
+        final aircraft = flight['aircraft'] as Map<String, dynamic>?;
+        final manufacturer = aircraft?['manufacturer'] as String? ?? 'Unknown';
 
         manufacturerCounts[manufacturer] =
             (manufacturerCounts[manufacturer] ?? 0) + 1;

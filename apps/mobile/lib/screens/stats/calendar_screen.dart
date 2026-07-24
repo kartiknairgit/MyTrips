@@ -16,6 +16,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<int>? _availableYears;
   int? _selectedYear;
   Map<int, int>? _monthlyCounts;
+  Map<int, int>? _dailyCounts;
+  bool _dayView = false;
+  int _selectedMonth = DateTime.now().month;
   bool _isLoading = true;
   String? _error;
 
@@ -81,12 +84,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  Future<void> _loadDailyCounts() async {
+    if (_selectedYear == null) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final counts =
+          await _statsService.getDailyCounts(_selectedYear!, _selectedMonth);
+      if (mounted) {
+        setState(() {
+          _dailyCounts = counts;
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   void _onYearChanged(int? year) {
     if (year != null && year != _selectedYear) {
       setState(() {
         _selectedYear = year;
       });
       _loadMonthlyCounts(year);
+      if (_dayView) _loadDailyCounts();
     }
   }
 
@@ -241,9 +270,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text('Month')),
+              ButtonSegment(value: true, label: Text('Day')),
+            ],
+            selected: {_dayView},
+            onSelectionChanged: (selection) {
+              setState(() => _dayView = selection.first);
+              if (_dayView) _loadDailyCounts();
+            },
+          ),
+          if (_dayView) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int>(
+              value: _selectedMonth,
+              decoration: const InputDecoration(
+                  labelText: 'Month', border: OutlineInputBorder()),
+              items: List.generate(
+                12,
+                (index) => DropdownMenuItem(
+                  value: index + 1,
+                  child: Text(
+                      DateFormat('MMMM').format(DateTime(2000, index + 1))),
+                ),
+              ),
+              onChanged: (month) {
+                if (month == null) return;
+                setState(() => _selectedMonth = month);
+                _loadDailyCounts();
+              },
+            ),
+          ],
+          const SizedBox(height: 24),
 
           // Monthly bar chart
-          if (_monthlyCounts != null) ...[
+          if (!_dayView && _monthlyCounts != null) ...[
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -271,7 +333,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
           ],
+          if (_dayView && _dailyCounts != null) _buildDayGrid(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDayGrid() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: GridView.count(
+        crossAxisCount: MediaQuery.sizeOf(context).width < 360 ? 5 : 7,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: _dailyCounts!.entries.map((entry) {
+          final count = entry.value;
+          return Semantics(
+            label:
+                'Day ${entry.key}, $count ${count == 1 ? 'flight' : 'flights'}',
+            child: Container(
+              margin: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: count == 0
+                    ? Colors.white10
+                    : const Color(0xFFFF10F0)
+                        .withOpacity((0.35 + count * 0.15).clamp(0.0, 1.0)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              alignment: Alignment.center,
+              child: Text('${entry.key}',
+                  style: TextStyle(
+                      color: count > 0 ? Colors.black : Colors.white70,
+                      fontWeight: FontWeight.bold)),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
