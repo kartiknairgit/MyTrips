@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,39 @@ class _MapScreenState extends State<MapScreen> {
   final FlightPathService _flightPathService = FlightPathService();
   bool _mapReady = false;
   Set<String> _renderedFlightIds = {};
+  Set<String> _inTransitIds = {};
+  Timer? _animationTimer;
+  bool _animationPhase = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationTimer =
+        Timer.periodic(const Duration(milliseconds: 650), (_) => _animate());
+  }
+
+  @override
+  void dispose() {
+    _animationTimer?.cancel();
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _animate() async {
+    if (!_mapReady || _mapController == null || _inTransitIds.isEmpty) return;
+    _animationPhase = !_animationPhase;
+    for (final id in _inTransitIds) {
+      try {
+        await _mapController!.setLayerProperties(
+          'flight-layer-$id',
+          LineLayerProperties(
+            lineOpacity: _animationPhase ? 1.0 : 0.58,
+            lineWidth: _animationPhase ? 3.2 : 2.5,
+          ),
+        );
+      } catch (_) {}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,9 +318,13 @@ class _MapScreenState extends State<MapScreen> {
       } catch (_) {}
     }
     _renderedFlightIds = {};
+    _inTransitIds = {};
     for (final flight in visible) {
       await _addFlightArc(flight);
       _renderedFlightIds.add(flight.id);
+      if (flight.deriveStatus() == FlightStatus.inTransit) {
+        _inTransitIds.add(flight.id);
+      }
     }
   }
 
