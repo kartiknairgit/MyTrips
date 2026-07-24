@@ -6,15 +6,15 @@ reasoning behind each cut/deferral.
 
 | # | Feature | Status | Notes |
 |---|---|---|---|
-| 0 | Flight entry (manual + lookup confirmation) | ✅ Web UI built | Editable lookup/manual confirmation flow with wall-clock-derived status |
-| 1 | Trip stats overview (mileage, duration, count, percentile) | ✅ Web UI built | Stat cards use `getOverviewStats()` with scope-aware badge copy and a home-country profile setting |
-| 2 | Flight calendar (month/day toggle, bar chart, year filter) | ✅ Web UI built | Recharts month/day views; year options span the user’s earliest flight through the current year |
-| 3 | Route map (2D/3D toggle, arrows, zoom, train toggle) | 🟡 2D done, 3D + train not built | 2D arcs use `MapView.tsx`; export has a camera fly-through, but dedicated 3D viewing and the train toggle remain out of scope |
-| 4 | Geo stats (continents/countries/cities, top airport/route) | ✅ Web UI built | Geographic reach counts and top-airport/route cards use `getGeoStats()` |
-| 5 | Airline stats (alliance grouping, top airline) | ✅ Web UI built | Alliance doughnut chart and top-airline highlight use `getAirlineStats()` |
-| 6 | Aircraft stats (manufacturer grouping) | ✅ Web UI built | Manufacturer bar chart uses `getAircraftStats()` and preserves nullable aircraft as an Unknown bucket |
-| 7 | Content generation & sharing | ✅ Web UI built | Capability-gated client-only recording, poster rendering, Web Share, and direct-download fallback |
-| 8 | Compatibility quiz | ✅ Web UI built | Send, accept/decline, consent-waiting, and aggregate-only report states use the frozen compatibility APIs |
+| 0 | Flight entry (manual + lookup confirmation) | ✅ Web + mobile UI built | Both clients provide editable lookup/manual confirmation with wall-clock-derived status |
+| 1 | Trip stats overview (mileage, duration, count, percentile) | ✅ Web + mobile UI built | Scope-aware totals and percentile badges use the frozen view/RPC |
+| 2 | Flight calendar (month/day toggle, bar chart, year filter) | ✅ Web + mobile UI built | Month/day views and data-derived year options extend through the current year |
+| 3 | Route map (2D/3D toggle, arrows, zoom, train toggle) | 🟡 Web + mobile 2D done; 3D + train not built | Both clients use MapLibre/OpenFreeMap; dedicated 3D viewing and the train toggle remain out of scope |
+| 4 | Geo stats (continents/countries/cities, top airport/route) | ✅ Web + mobile UI built | Auth-scoped geographic reach counts and top-airport/route cards |
+| 5 | Airline stats (alliance grouping, top airline) | ✅ Web + mobile UI built | Auth-scoped alliance breakdown and top-airline highlight |
+| 6 | Aircraft stats (manufacturer grouping) | ✅ Web + mobile UI built | Both clients use `aircraft_types.manufacturer` and preserve Unknown aircraft |
+| 7 | Content generation & sharing | ✅ Web UI built; mobile not applicable | The specified canvas, MediaRecorder, and Web Share implementation is web-client-only |
+| 8 | Compatibility quiz | ✅ Web + mobile UI built | Send, accept/decline, consent-waiting, and aggregate-only reports use the frozen APIs |
 | 9 | Data-unlock / membership nudges | ❌ Dropped | Monetization explicitly out of scope — nothing to build under the UI |
 
 ## What's genuinely not started yet (UI layer)
