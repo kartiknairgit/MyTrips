@@ -165,7 +165,7 @@ export default function CompatibilityQuiz() {
                   </button>
                 ) : <span className="section-copy">Declined—no report was created.</span>}
                 {waitingReport === request.id && (
-                  <div className="notice info">Waiting for acceptance. Aggregate compatibility unlocks only after the invited flyer consents.</div>
+                  <div className="notice info">Waiting for acceptance. Aggregate compatibility is available only after the invited flyer consents.</div>
                 )}
                 {report && (
                   <div className="compat-report">

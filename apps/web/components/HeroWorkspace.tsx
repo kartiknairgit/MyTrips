@@ -92,7 +92,7 @@ function FootprintExport({ map, flights }: { map: maplibregl.Map | null; flights
       {!map ? (
         <div className="notice info" aria-busy="true">Preparing the map for export…</div>
       ) : flights.length === 0 ? (
-        <div className="empty-state compact-empty"><strong>Nothing to export yet</strong><span>Add your first flight to unlock a poster and route recording.</span></div>
+        <div className="empty-state compact-empty"><strong>Nothing to export yet</strong><span>Add your first flight to create a poster and route recording.</span></div>
       ) : (
         <>
           <div className="button-row">
