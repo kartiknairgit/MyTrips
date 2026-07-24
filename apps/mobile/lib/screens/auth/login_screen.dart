@@ -173,7 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   Consumer<AuthProvider>(
                     builder: (context, authProvider, _) {
                       return ElevatedButton(
-                        onPressed: authProvider.isLoading ? null : _handleSignIn,
+                        onPressed:
+                            authProvider.isLoading ? null : _handleSignIn,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF10F0),
                           foregroundColor: Colors.black,

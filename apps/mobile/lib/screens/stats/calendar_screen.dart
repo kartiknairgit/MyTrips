@@ -213,7 +213,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, color: Color(0xFFFF10F0), size: 20),
+                const Icon(Icons.calendar_today,
+                    color: Color(0xFFFF10F0), size: 20),
                 const SizedBox(width: 12),
                 const Text(
                   'Year:',
@@ -344,7 +345,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 if (monthIndex < 1 || monthIndex > 12) {
                   return const SizedBox.shrink();
                 }
-                final monthName = DateFormat('MMM').format(DateTime(2000, monthIndex));
+                final monthName =
+                    DateFormat('MMM').format(DateTime(2000, monthIndex));
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
@@ -364,7 +366,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (group) => Colors.black87,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final month = DateFormat('MMMM').format(DateTime(2000, group.x + 1));
+              final month =
+                  DateFormat('MMMM').format(DateTime(2000, group.x + 1));
               final count = rod.toY.toInt();
               final plural = count == 1 ? 'flight' : 'flights';
               return BarTooltipItem(

@@ -63,7 +63,8 @@ class CompatService {
 
       final response = await _client
           .from('compat_requests')
-          .select('*, requested:profiles!compat_requests_requested_id_fkey(email)')
+          .select(
+              '*, requested:profiles!compat_requests_requested_id_fkey(email)')
           .eq('requester_id', userId)
           .order('created_at', ascending: false);
 
@@ -83,7 +84,8 @@ class CompatService {
 
       final response = await _client
           .from('compat_requests')
-          .select('*, requester:profiles!compat_requests_requester_id_fkey(email)')
+          .select(
+              '*, requester:profiles!compat_requests_requester_id_fkey(email)')
           .eq('requested_id', userId)
           .eq('status', 'pending')
           .order('created_at', ascending: false);
@@ -99,8 +101,7 @@ class CompatService {
     try {
       await _client
           .from('compat_requests')
-          .update({'status': 'accepted'})
-          .eq('id', requestId);
+          .update({'status': 'accepted'}).eq('id', requestId);
     } catch (e) {
       throw Exception('Failed to accept request: $e');
     }
@@ -111,8 +112,7 @@ class CompatService {
     try {
       await _client
           .from('compat_requests')
-          .update({'status': 'declined'})
-          .eq('id', requestId);
+          .update({'status': 'declined'}).eq('id', requestId);
     } catch (e) {
       throw Exception('Failed to decline request: $e');
     }

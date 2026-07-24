@@ -223,7 +223,8 @@ class _GeoAirlineScreenState extends State<GeoAirlineScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.flight_takeoff, color: Color(0xFFFF10F0), size: 24),
+                      const Icon(Icons.flight_takeoff,
+                          color: Color(0xFFFF10F0), size: 24),
                       const SizedBox(width: 8),
                       const Text(
                         'Top Airport',
@@ -268,7 +269,8 @@ class _GeoAirlineScreenState extends State<GeoAirlineScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.route, color: Color(0xFFFF10F0), size: 24),
+                      const Icon(Icons.route,
+                          color: Color(0xFFFF10F0), size: 24),
                       const SizedBox(width: 8),
                       const Text(
                         'Top Route',
@@ -324,7 +326,8 @@ class _GeoAirlineScreenState extends State<GeoAirlineScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.airlines, color: Color(0xFFFF10F0), size: 24),
+                      const Icon(Icons.airlines,
+                          color: Color(0xFFFF10F0), size: 24),
                       const SizedBox(width: 8),
                       const Text(
                         'Top Airline',

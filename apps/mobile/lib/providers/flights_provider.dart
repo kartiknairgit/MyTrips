@@ -33,15 +33,12 @@ class FlightsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _client
-          .from('flights')
-          .select('''
+      final response = await _client.from('flights').select('''
             *,
             departure:airports!flights_departure_iata_fkey(lat, lng),
             arrival:airports!flights_arrival_iata_fkey(lat, lng),
             airline:airlines(brand_color_hex)
-          ''')
-          .order('departure_time', ascending: false);
+          ''').order('departure_time', ascending: false);
 
       _flights = (response as List)
           .map((json) => Flight.fromJson(json as Map<String, dynamic>))
@@ -63,8 +60,7 @@ class FlightsProvider with ChangeNotifier {
     try {
       final stream = _client
           .from('flights')
-          .stream(primaryKey: ['id'])
-          .order('departure_time');
+          .stream(primaryKey: ['id']).order('departure_time');
 
       _realtimeSubscription = stream.listen(
         (data) {

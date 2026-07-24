@@ -8,7 +8,8 @@ class CompatScreen extends StatefulWidget {
   State<CompatScreen> createState() => _CompatScreenState();
 }
 
-class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderStateMixin {
+class _CompatScreenState extends State<CompatScreen>
+    with SingleTickerProviderStateMixin {
   final _compatService = CompatService();
   final _emailController = TextEditingController();
 
@@ -198,16 +199,20 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildReportItem('Shared Airports', report['shared_airports']?.toString() ?? '0'),
-              _buildReportItem('Shared Airlines', report['shared_airlines']?.toString() ?? '0'),
-              _buildReportItem('Shared Routes', report['shared_routes']?.toString() ?? '0'),
+              _buildReportItem('Shared Airports',
+                  report['shared_airports']?.toString() ?? '0'),
+              _buildReportItem('Shared Airlines',
+                  report['shared_airlines']?.toString() ?? '0'),
+              _buildReportItem(
+                  'Shared Routes', report['shared_routes']?.toString() ?? '0'),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close', style: TextStyle(color: Color(0xFFFF10F0))),
+            child:
+                const Text('Close', style: TextStyle(color: Color(0xFFFF10F0))),
           ),
         ],
       ),
@@ -275,7 +280,8 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                      const Icon(Icons.error_outline,
+                          color: Colors.redAccent, size: 48),
                       const SizedBox(height: 16),
                       Text(
                         _error!,
@@ -384,7 +390,8 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
             )
           else
             ..._sentRequests.map((request) {
-              final requestedEmail = request['requested']?['email'] ?? 'Unknown';
+              final requestedEmail =
+                  request['requested']?['email'] ?? 'Unknown';
               final status = request['status'] as String;
 
               return Container(
@@ -404,7 +411,8 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
                         children: [
                           Text(
                             requestedEmail,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 14),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -452,7 +460,8 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
             )
           else
             ..._receivedRequests.map((request) {
-              final requesterEmail = request['requester']?['email'] ?? 'Unknown';
+              final requesterEmail =
+                  request['requester']?['email'] ?? 'Unknown';
               final requestId = request['id'] as String;
 
               return Container(
@@ -531,8 +540,10 @@ class _CompatScreenState extends State<CompatScreen> with SingleTickerProviderSt
             )
           else
             ..._acceptedCompats.map((compat) {
-              final requesterProfile = compat['requester'] as Map<String, dynamic>?;
-              final requestedProfile = compat['requested'] as Map<String, dynamic>?;
+              final requesterProfile =
+                  compat['requester'] as Map<String, dynamic>?;
+              final requestedProfile =
+                  compat['requested'] as Map<String, dynamic>?;
 
               // Determine which user is "the other user"
               final currentUserId = compat['requester_id'];

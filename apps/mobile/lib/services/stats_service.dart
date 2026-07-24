@@ -77,7 +77,8 @@ class StatsService {
       }
 
       for (final flight in response as List) {
-        final departureTime = DateTime.parse(flight['departure_time'] as String);
+        final departureTime =
+            DateTime.parse(flight['departure_time'] as String);
         final month = departureTime.month;
         monthlyCounts[month] = (monthlyCounts[month] ?? 0) + 1;
       }
@@ -108,8 +109,10 @@ class StatsService {
       }
 
       final flights = response as List;
-      final firstFlight = DateTime.parse(flights.first['departure_time'] as String);
-      final lastFlight = DateTime.parse(flights.last['departure_time'] as String);
+      final firstFlight =
+          DateTime.parse(flights.first['departure_time'] as String);
+      final lastFlight =
+          DateTime.parse(flights.last['departure_time'] as String);
 
       final minYear = firstFlight.year;
       final maxYear = lastFlight.year;
@@ -161,9 +164,12 @@ class StatsService {
 
         // Add departure airport data
         if (depAirport != null) {
-          if (depAirport['continent'] != null) continents.add(depAirport['continent'] as String);
-          if (depAirport['country'] != null) countries.add(depAirport['country'] as String);
-          if (depAirport['city'] != null) cities.add(depAirport['city'] as String);
+          if (depAirport['continent'] != null)
+            continents.add(depAirport['continent'] as String);
+          if (depAirport['country'] != null)
+            countries.add(depAirport['country'] as String);
+          if (depAirport['city'] != null)
+            cities.add(depAirport['city'] as String);
 
           final depIata = flight['departure_iata'] as String;
           airportCounts[depIata] = (airportCounts[depIata] ?? 0) + 1;
@@ -171,9 +177,12 @@ class StatsService {
 
         // Add arrival airport data
         if (arrAirport != null) {
-          if (arrAirport['continent'] != null) continents.add(arrAirport['continent'] as String);
-          if (arrAirport['country'] != null) countries.add(arrAirport['country'] as String);
-          if (arrAirport['city'] != null) cities.add(arrAirport['city'] as String);
+          if (arrAirport['continent'] != null)
+            continents.add(arrAirport['continent'] as String);
+          if (arrAirport['country'] != null)
+            countries.add(arrAirport['country'] as String);
+          if (arrAirport['city'] != null)
+            cities.add(arrAirport['city'] as String);
 
           final arrIata = flight['arrival_iata'] as String;
           airportCounts[arrIata] = (airportCounts[arrIata] ?? 0) + 1;
@@ -210,8 +219,12 @@ class StatsService {
         'continents': continents.length,
         'countries': countries.length,
         'cities': cities.length,
-        'topAirport': topAirportIata != null ? {'iata': topAirportIata, 'count': maxAirportCount} : null,
-        'topRoute': topRoute != null ? {'route': topRoute, 'count': maxRouteCount} : null,
+        'topAirport': topAirportIata != null
+            ? {'iata': topAirportIata, 'count': maxAirportCount}
+            : null,
+        'topRoute': topRoute != null
+            ? {'route': topRoute, 'count': maxRouteCount}
+            : null,
       };
     } catch (e) {
       throw Exception('Failed to fetch geo stats: $e');
@@ -269,7 +282,9 @@ class StatsService {
 
       return {
         'allianceCounts': allianceCounts,
-        'topAirline': topAirlineIata != null ? {'iata': topAirlineIata, 'count': maxAirlineCount} : null,
+        'topAirline': topAirlineIata != null
+            ? {'iata': topAirlineIata, 'count': maxAirlineCount}
+            : null,
       };
     } catch (e) {
       throw Exception('Failed to fetch airline stats: $e');
@@ -334,7 +349,8 @@ class StatsService {
           }
         }
 
-        manufacturerCounts[manufacturer] = (manufacturerCounts[manufacturer] ?? 0) + 1;
+        manufacturerCounts[manufacturer] =
+            (manufacturerCounts[manufacturer] ?? 0) + 1;
       }
 
       return manufacturerCounts;

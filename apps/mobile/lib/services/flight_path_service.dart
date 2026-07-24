@@ -38,10 +38,11 @@ class FlightPathService {
     final lng2 = _toRadians(to.longitude);
 
     // Calculate great circle distance
-    final d = 2 * math.asin(math.sqrt(
-      math.pow(math.sin((lat1 - lat2) / 2), 2) +
-      math.cos(lat1) * math.cos(lat2) * math.pow(math.sin((lng1 - lng2) / 2), 2)
-    ));
+    final d = 2 *
+        math.asin(math.sqrt(math.pow(math.sin((lat1 - lat2) / 2), 2) +
+            math.cos(lat1) *
+                math.cos(lat2) *
+                math.pow(math.sin((lng1 - lng2) / 2), 2)));
 
     if (d == 0) {
       // Same point
@@ -51,8 +52,10 @@ class FlightPathService {
     final a = math.sin((1 - fraction) * d) / math.sin(d);
     final b = math.sin(fraction * d) / math.sin(d);
 
-    final x = a * math.cos(lat1) * math.cos(lng1) + b * math.cos(lat2) * math.cos(lng2);
-    final y = a * math.cos(lat1) * math.sin(lng1) + b * math.cos(lat2) * math.sin(lng2);
+    final x = a * math.cos(lat1) * math.cos(lng1) +
+        b * math.cos(lat2) * math.cos(lng2);
+    final y = a * math.cos(lat1) * math.sin(lng1) +
+        b * math.cos(lat2) * math.sin(lng2);
     final z = a * math.sin(lat1) + b * math.sin(lat2);
 
     final lat = math.atan2(z, math.sqrt(x * x + y * y));

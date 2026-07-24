@@ -208,7 +208,8 @@ class _AircraftScreenState extends State<AircraftScreen> {
                 ..._manufacturerCounts!.entries.map((entry) {
                   final manufacturer = entry.key;
                   final count = entry.value;
-                  final total = _manufacturerCounts!.values.reduce((a, b) => a + b);
+                  final total =
+                      _manufacturerCounts!.values.reduce((a, b) => a + b);
                   final percentage = (count / total * 100).toStringAsFixed(1);
 
                   return Padding(
