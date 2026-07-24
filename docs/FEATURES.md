@@ -6,6 +6,7 @@ reasoning behind each cut/deferral.
 
 | # | Feature | Status | Notes |
 |---|---|---|---|
+| 0 | Flight entry (manual + lookup confirmation) | ✅ Web UI built | Editable lookup/manual confirmation flow with wall-clock-derived status |
 | 1 | Trip stats overview (mileage, duration, count, percentile) | ✅ Schema + client lib built | `user_flight_stats` view + `my_mileage_percentile()`; `lib/stats.ts::getOverviewStats()` |
 | 2 | Flight calendar (month/day toggle, bar chart, year filter) | ✅ Data layer built, UI not built | `lib/stats.ts::getMonthlyCounts()` returns the array a bar-chart component consumes; day-view/UI still to build |
 | 3 | Route map (2D/3D toggle, arrows, zoom, train toggle) | 🟡 2D done, 3D + train stubbed | 2D arcs from v1 `MapView.tsx`; 3D fly-through exists via `footprintExport.ts`'s camera animation but no dedicated 3D *viewing* mode yet; train toggle is UI-only placeholder, no data source |
