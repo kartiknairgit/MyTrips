@@ -4,6 +4,7 @@ import OverviewStats from "@/components/OverviewStats";
 import FlightCalendar from "@/components/FlightCalendar";
 import GeoStats from "@/components/GeoStats";
 import AirlineStats from "@/components/AirlineStats";
+import AircraftStats from "@/components/AircraftStats";
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
         <FlightCalendar />
         <GeoStats />
         <AirlineStats />
+        <AircraftStats />
       </div>
     </main>
   );

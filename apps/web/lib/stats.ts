@@ -185,10 +185,11 @@ export async function getAirlineStats(): Promise<AirlineStats> {
 
 /** Stat #6: Aircraft stats, grouped by manufacturer */
 export async function getAircraftStats(): Promise<Record<string, number>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("flights")
     .select("aircraft:aircraft_types(manufacturer)")
     .eq("status", "completed");
+  if (error) throw error;
 
   const byManufacturer: Record<string, number> = {};
   for (const row of data ?? ([] as any[])) {

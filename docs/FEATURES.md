@@ -12,7 +12,7 @@ reasoning behind each cut/deferral.
 | 3 | Route map (2D/3D toggle, arrows, zoom, train toggle) | 🟡 2D done, 3D + train stubbed | 2D arcs from v1 `MapView.tsx`; 3D fly-through exists via `footprintExport.ts`'s camera animation but no dedicated 3D *viewing* mode yet; train toggle is UI-only placeholder, no data source |
 | 4 | Geo stats (continents/countries/cities, top airport/route) | ✅ Web UI built | Geographic reach counts and top-airport/route cards use `getGeoStats()` |
 | 5 | Airline stats (alliance grouping, top airline) | ✅ Web UI built | Alliance doughnut chart and top-airline highlight use `getAirlineStats()` |
-| 6 | Aircraft stats (manufacturer grouping) | ✅ Schema + client lib built | `aircraft_types` table, `flights.aircraft_iata` (nullable), `lib/stats.ts::getAircraftStats()` |
+| 6 | Aircraft stats (manufacturer grouping) | ✅ Web UI built | Manufacturer bar chart uses `getAircraftStats()` and preserves nullable aircraft as an Unknown bucket |
 | 7 | Content generation & sharing | ✅ Client-side export built | `footprintExport.ts` — canvas + MediaRecorder video, canvas poster, Web Share API. No server-rendered video (cost) |
 | 8 | Compatibility quiz | ✅ Consent-gated backend built | `compat_requests` + `get_compat_report()`; UI flow (send request, accept, view report) not built |
 | 9 | Data-unlock / membership nudges | ❌ Dropped | Monetization explicitly out of scope — nothing to build under the UI |
