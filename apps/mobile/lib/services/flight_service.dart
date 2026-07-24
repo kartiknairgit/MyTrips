@@ -22,7 +22,14 @@ class FlightService {
         body: lookupPayload(flightCode, date),
       );
 
-      if (response.data == null) {
+      if (response.status < 200 || response.status >= 300) {
+        final message = response.data is Map
+            ? (response.data as Map)['error']?.toString()
+            : null;
+        throw Exception(
+            message ?? 'Lookup service returned ${response.status}');
+      }
+      if (response.data is! Map<String, dynamic>) {
         throw Exception('No data returned from lookup-flight');
       }
 
@@ -81,6 +88,9 @@ class FlightService {
       ..remove('user_id');
     final departure = DateTime.parse(data['departure_time'] as String);
     final arrival = DateTime.parse(data['arrival_time'] as String);
+    if (!arrival.isAfter(departure)) {
+      throw const FormatException('Arrival must be after departure.');
+    }
     data['flight_number'] =
         (data['flight_number'] as String).trim().toUpperCase();
     data['departure_iata'] =
