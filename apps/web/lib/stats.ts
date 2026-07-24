@@ -11,14 +11,17 @@ export interface OverviewStats {
 
 /** Stat #1: Trip Statistics Overview */
 export async function getOverviewStats(homeCountry?: string): Promise<OverviewStats> {
-  const { data: stats } = await supabase
+  const { data: stats, error: statsError } = await supabase
     .from("user_flight_stats")
     .select("total_flights, total_km, total_hours")
     .single();
 
-  const { data: percentileRows } = await supabase.rpc("my_mileage_percentile", {
+  if (statsError && statsError.code !== "PGRST116") throw statsError;
+
+  const { data: percentileRows, error: percentileError } = await supabase.rpc("my_mileage_percentile", {
     scope_country: homeCountry ?? null,
   });
+  if (percentileError) throw percentileError;
   const p = percentileRows?.[0];
 
   return {

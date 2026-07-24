@@ -1,5 +1,6 @@
 import MapView from "@/components/MapView";
 import FlightEntryForm from "@/components/FlightEntryForm";
+import OverviewStats from "@/components/OverviewStats";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
           <div className="panel map-panel"><MapView /></div>
           <FlightEntryForm />
         </div>
+        <OverviewStats />
       </div>
     </main>
   );
