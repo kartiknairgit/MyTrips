@@ -40,7 +40,6 @@ class FlightPathApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => FlightsProvider()),
       ],
       child: MaterialApp(
         title: 'FlightPath',
@@ -81,7 +80,11 @@ class AuthGate extends StatelessWidget {
         }
 
         if (authProvider.isAuthenticated) {
-          return const MapScreen();
+          return ChangeNotifierProvider(
+            key: ValueKey(authProvider.currentUser!.id),
+            create: (_) => FlightsProvider(),
+            child: const MapScreen(),
+          );
         }
 
         return const LoginScreen();

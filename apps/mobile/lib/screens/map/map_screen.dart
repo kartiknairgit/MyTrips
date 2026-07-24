@@ -6,6 +6,11 @@ import '../../providers/auth_provider.dart';
 import '../../services/flight_path_service.dart';
 import '../../models/flight.dart';
 import '../flights/add_flight_screen.dart';
+import '../stats/overview_screen.dart';
+import '../stats/calendar_screen.dart';
+import '../stats/geo_airline_screen.dart';
+import '../stats/aircraft_screen.dart';
+import '../compat/compat_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -18,6 +23,7 @@ class _MapScreenState extends State<MapScreen> {
   MapLibreMapController? _mapController;
   final FlightPathService _flightPathService = FlightPathService();
   bool _mapReady = false;
+  Set<String> _renderedFlightIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +54,40 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: SafeArea(
+          child: ListView(
+            children: [
+              const DrawerHeader(
+                child: Text('FlightPath',
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              ),
+              _destination(Icons.map_outlined, 'Route map', null),
+              _destination(Icons.add, 'Add flight', const AddFlightScreen()),
+              _destination(Icons.insights, 'Overview', const OverviewScreen()),
+              _destination(
+                  Icons.calendar_month, 'Calendar', const CalendarScreen()),
+              _destination(Icons.public, 'Geography & airlines',
+                  const GeoAirlineScreen()),
+              _destination(
+                  Icons.flight_class, 'Aircraft', const AircraftScreen()),
+              _destination(
+                  Icons.people_outline, 'Compatibility', const CompatScreen()),
+              const Divider(),
+              ListTile(
+                minVerticalPadding: 12,
+                leading: const Icon(Icons.logout, color: Color(0xFFFF10F0)),
+                title: const Text('Sign out'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await context.read<AuthProvider>().signOut();
+                },
+              ),
+            ],
+          ),
+        ),
       ),
       body: Consumer<FlightsProvider>(
         builder: (context, flightsProvider, _) {
@@ -160,6 +200,11 @@ class _MapScreenState extends State<MapScreen> {
             );
           }
 
+          if (_mapReady) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _syncFlightArcs(flightsProvider.flights);
+            });
+          }
           return _buildMap();
         },
       ),
@@ -183,6 +228,20 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  Widget _destination(IconData icon, String label, Widget? screen) {
+    return ListTile(
+      minVerticalPadding: 12,
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: () {
+        Navigator.of(context).pop();
+        if (screen != null) {
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+        }
+      },
+    );
+  }
+
   Widget _buildMap() {
     return MapLibreMap(
       styleString: 'https://tiles.openfreemap.org/styles/liberty',
@@ -197,20 +256,37 @@ class _MapScreenState extends State<MapScreen> {
         setState(() {
           _mapReady = true;
         });
-        _addFlightArcs();
+        _syncFlightArcs(context.read<FlightsProvider>().flights);
       },
       myLocationEnabled: false,
       compassEnabled: true,
     );
   }
 
-  Future<void> _addFlightArcs() async {
+  Future<void> _syncFlightArcs(List<Flight> flights) async {
     if (_mapController == null || !_mapReady) return;
-
-    final flights = context.read<FlightsProvider>().flights;
-
-    for (final flight in flights) {
+    final visible = flights
+        .where((flight) =>
+            flight.deriveStatus() != FlightStatus.cancelled &&
+            FlightPathService.hasValidCoordinates(flight))
+        .toList();
+    final desiredIds = visible.map((flight) => flight.id).toSet();
+    for (final id in _renderedFlightIds.difference(desiredIds)) {
+      try {
+        await _mapController!.removeLayer('flight-layer-$id');
+        await _mapController!.removeSource('flight-$id');
+      } catch (_) {}
+    }
+    for (final id in _renderedFlightIds.intersection(desiredIds)) {
+      try {
+        await _mapController!.removeLayer('flight-layer-$id');
+        await _mapController!.removeSource('flight-$id');
+      } catch (_) {}
+    }
+    _renderedFlightIds = {};
+    for (final flight in visible) {
       await _addFlightArc(flight);
+      _renderedFlightIds.add(flight.id);
     }
   }
 
@@ -258,6 +334,7 @@ class _MapScreenState extends State<MapScreen> {
           lineColor: paint['line-color'] as String,
           lineWidth: (paint['line-width'] as num).toDouble(),
           lineOpacity: (paint['line-opacity'] as num?)?.toDouble(),
+          lineDasharray: paint['line-dasharray'],
         ),
       );
     } catch (e) {

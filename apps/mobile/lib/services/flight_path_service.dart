@@ -5,6 +5,20 @@ import '../models/flight.dart';
 /// Service for great-circle arc calculations and MapLibre styling.
 /// Ports logic from apps/web/lib/flightPath.ts.
 class FlightPathService {
+  static bool hasValidCoordinates(Flight flight) =>
+      flight.departureLat >= -90 &&
+      flight.departureLat <= 90 &&
+      flight.arrivalLat >= -90 &&
+      flight.arrivalLat <= 90 &&
+      flight.departureLng >= -180 &&
+      flight.departureLng <= 180 &&
+      flight.arrivalLng >= -180 &&
+      flight.arrivalLng <= 180 &&
+      !(flight.departureLat == 0 &&
+          flight.departureLng == 0 &&
+          flight.arrivalLat == 0 &&
+          flight.arrivalLng == 0);
+
   /// Generate great-circle arc coordinates between two points.
   /// Returns list of [lng, lat] coordinates for MapLibre GeoJSON.
   List<List<double>> greatCircleArc({
