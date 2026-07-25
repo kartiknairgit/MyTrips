@@ -284,7 +284,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           if (_dayView) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: _selectedMonth,
+              initialValue: _selectedMonth,
               decoration: const InputDecoration(
                   labelText: 'Month', border: OutlineInputBorder()),
               items: List.generate(
@@ -361,7 +361,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 color: count == 0
                     ? Colors.white10
                     : const Color(0xFFFF10F0)
-                        .withOpacity((0.35 + count * 0.15).clamp(0.0, 1.0)),
+                        .withValues(alpha: (0.35 + count * 0.15).clamp(0.0, 1.0)),
                 borderRadius: BorderRadius.circular(6),
               ),
               alignment: Alignment.center,
